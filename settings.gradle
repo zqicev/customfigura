@@ -5,17 +5,7 @@ pluginManagement {
         // so jars never finish. We front it with a tiny local chunked/caching proxy
         // (tools/ArchProxy.java on :8099) which fetches via small HTTP Range requests.
         // Start the proxy before building. Falls back to nothing else for these artifacts.
-        maven {
-            url "http://127.0.0.1:8099/arch/"
-            allowInsecureProtocol = true
-            // Only architectury artifacts live here; everything else must come from the
-            // real repos (otherwise the proxy returns architectury.dev's HTML 404 pages,
-            // which break POM parsing).
-            content {
-                includeGroup("architectury-plugin")
-                includeGroupByRegex("dev\\.architectury.*")
-            }
-        }
+        maven { url "https://maven.architectury.dev/" }
         maven { url "https://maven.minecraftforge.net/" }
         // architectury-loom's build classpath needs com.mojang:datafixerupper, which lives
         // on Mojang's library repo (not on Central/Forge/Fabric).

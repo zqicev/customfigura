@@ -19,11 +19,7 @@ subprojects {
 		maven { url 'https://api.modrinth.com/maven' }
 		// maven.quiltmc.org (Cloudflare) throttles sustained downloads on this network, so
 		// quilt-mappings never finishes. Front it with the local chunked proxy (see tools/ArchProxy.java).
-		maven {
-			url 'http://127.0.0.1:8099/quilt/'
-			allowInsecureProtocol = true
-			content { includeGroupByRegex("org\\.quiltmc.*") }
-		}
+		maven { url 'https://maven.quiltmc.org/repository/release/' }
 		// maven.neoforged.net is on a CDN (CDN77) that is unreachable/throttled on this network
 		// (even the TLS handshake fails), which hangs any artifact lookup that reaches it.
 		// It is only needed for the NeoForge platform, which we do not build, so it is removed.
