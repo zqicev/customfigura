@@ -50,7 +50,7 @@ public class FiguraWebSocketAdapter extends WebSocketAdapter {
         try {
             websocket.sendBinary(C2SMessageHandler.auth(token).array());
         } catch (Exception e) {
-            handleClose(-1, e.getMessage());
+            handleClose(websocket, -1, e.getMessage());
         }
     }
 
@@ -73,6 +73,8 @@ public class FiguraWebSocketAdapter extends WebSocketAdapter {
     @Override
     public void onBinaryMessage(WebSocket websocket, byte[] binary) throws Exception {
         super.onBinaryMessage(websocket, binary);
+        if (!NetworkStuff.isCurrentSocket(websocket))
+            return;
         if (NetworkStuff.debug)
             FiguraMod.debug("Received raw ws message of " + binary.length + "b");
         try {
@@ -109,7 +111,7 @@ public class FiguraWebSocketAdapter extends WebSocketAdapter {
         reason = reason.trim().isEmpty() ? ERROR_CODES.getOrDefault(code, "Unknown") : reason;
         FiguraMod.LOGGER.info("Closed connection: " + reason + ", Code: " + code + ", Remote: " + remote);
 
-        handleClose(code, reason + (FiguraMod.debugModeEnabled() ? "\n\nCode: " + code + "\nRemote: " + remote : ""));
+        handleClose(websocket, code, reason + (FiguraMod.debugModeEnabled() ? "\n\nCode: " + code + "\nRemote: " + remote : ""));
     }
 
     @Override
@@ -119,7 +121,12 @@ public class FiguraWebSocketAdapter extends WebSocketAdapter {
         super.onSendingFrame(websocket, frame);
     }
 
-    private void handleClose(int code, String reason) {
+    private void handleClose(WebSocket websocket, int code, String reason) {
+        // The plugin delivers the token more than once, so a connection can be superseded while
+        // it is still coming up. The old socket closing must not tear down its replacement.
+        if (!NetworkStuff.isCurrentSocket(websocket))
+            return;
+
         if (Configs.CONNECTION_TOASTS.value)
             FiguraToast.sendToast(FiguraText.of("backend.disconnected"), FiguraToast.ToastType.ERROR);
 
