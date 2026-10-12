@@ -160,11 +160,10 @@ public class NetworkStuff {
     }
 
     private static boolean checkUUID(UUID id) {
-        if (id.version() != 4) {
-            FiguraMod.debug("Voiding request for non v4 UUID \"" + id + "\" (v" + id.version() + ")");
-            return true;
-        }
-        return false;
+        // Offline / cracked players have version-3 (name-based) UUIDs. The stock client voids
+        // every request for non-v4 UUIDs, which hides those players' avatars from everyone on an
+        // offline server. Accept any real UUID; only reject a missing one.
+        return id == null;
     }
 
 

@@ -277,7 +277,7 @@ public class Configs {
         }
     };
     public static final ConfigType.IPConfig
-            SERVER_IP = new ConfigType.IPConfig("server_ip", DEV, "figura.moonlight-devs.org") {
+            SERVER_IP = new ConfigType.IPConfig("server_ip", DEV, "127.0.0.1:25981") {
         @Override
         public void onChange() {
             super.onChange();

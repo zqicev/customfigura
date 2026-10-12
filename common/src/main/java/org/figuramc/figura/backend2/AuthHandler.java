@@ -1,65 +1,38 @@
 package org.figuramc.figura.backend2;
 
-import com.mojang.authlib.exceptions.AuthenticationUnavailableException;
-import com.mojang.authlib.exceptions.InsufficientPrivilegesException;
-import com.mojang.authlib.exceptions.InvalidCredentialsException;
-import com.mojang.authlib.exceptions.UserBannedException;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.User;
-import net.minecraft.network.chat.Component;
 import org.figuramc.figura.FiguraMod;
 
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-
+/**
+ * Authentication for the self-hosted backend.
+ *
+ * <p>Instead of the Mojang {@code joinServer} handshake, the client authenticates with a
+ * one-time session token that the server plugin pushes over the trusted {@code figura:auth}
+ * plugin-messaging channel when the player joins. The plugin maps that token back to the
+ * player's server UUID, so a valid token <em>is</em> the identity &mdash; no Mojang, no
+ * Ely.By, no UUID drift on offline servers.</p>
+ */
 public class AuthHandler {
+
+    /** Token delivered by the server plugin (Fabric receiver). Cleared on disconnect. */
+    public static volatile String pluginToken;
 
     public static void auth(boolean reAuth) {
         NetworkStuff.async(() -> {
             if (!reAuth && NetworkStuff.isConnected())
                 return;
 
-            FiguraMod.LOGGER.info("Authenticating with " + FiguraMod.MOD_NAME + " server...");
-            NetworkStuff.backendStatus = 2;
-
-            Minecraft minecraft = Minecraft.getInstance();
-            User user = minecraft.getUser();
-            try {
-                String username = user.getName();
-                String serverID = getServerID(username);
-                FiguraMod.debug("Joining \"{}\" on server \"{}\"", username, serverID);
-                minecraft.getMinecraftSessionService().joinServer(user.getProfileId(), user.getAccessToken(), serverID);
-                NetworkStuff.authSuccess(getToken(serverID));
-            // cringe exceptions
-            } catch (AuthenticationUnavailableException e) {
-                NetworkStuff.authFail(Component.translatable("disconnect.loginFailedInfo.serversUnavailable").getString());
-            } catch (InvalidCredentialsException e) {
-                NetworkStuff.authFail(Component.translatable("disconnect.loginFailedInfo.invalidSession").getString());
-            } catch (InsufficientPrivilegesException e) {
-                NetworkStuff.authFail(Component.translatable("disconnect.loginFailedInfo.insufficientPrivileges").getString());
-            } catch (UserBannedException e) {
-                NetworkStuff.authFail(Component.translatable("disconnect.loginFailedInfo.userBanned").getString());
-            } catch (Exception e) {
-                NetworkStuff.authFail(e.getMessage());
+            String token = pluginToken;
+            if (token == null || token.isEmpty()) {
+                // Not on our server (or the token hasn't arrived yet). Stay idle - the
+                // figura:auth receiver triggers (re)auth the moment a token shows up.
+                FiguraMod.debug("No Figura session token yet - waiting for the server plugin (figura:auth)");
+                NetworkStuff.backendStatus = 1;
+                return;
             }
+
+            FiguraMod.LOGGER.info("Authenticating with the " + FiguraMod.MOD_NAME + " backend using the server session token");
+            NetworkStuff.backendStatus = 2;
+            NetworkStuff.authSuccess(token);
         });
-    }
-
-    // requests // 
-
-    protected static String request(HttpRequest request) throws Exception {
-        HttpResponse<String> response = NetworkStuff.client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-        if (response.statusCode() != 200)
-            throw new Exception(response.body());
-        return response.body();
-    }
-
-    private static String getServerID(String username) throws Exception {
-        return request(HttpRequest.newBuilder(HttpAPI.getUri("/auth/id?username=" + username)).build());
-    }
-
-    private static String getToken(String serverID) throws Exception {
-        return request(HttpRequest.newBuilder(HttpAPI.getUri("/auth/verify?id=" + serverID)).build());
     }
 }

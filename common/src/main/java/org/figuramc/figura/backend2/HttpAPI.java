@@ -29,7 +29,8 @@ public class HttpAPI {
     }
 
     protected static String getBackendAddress() {
-        return "https://" + getBackendAddressWithPort() + "/api";
+        // Custom self-hosted backend over plain HTTP (no TLS / shared hosting).
+        return "http://" + getBackendAddressWithPort() + "/api";
     }
 
     private static String getBackendAddressWithPort() {
