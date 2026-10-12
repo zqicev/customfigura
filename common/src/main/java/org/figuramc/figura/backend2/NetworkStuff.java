@@ -474,6 +474,12 @@ public class NetworkStuff {
         return ws != null && ws.isOpen() && backendStatus == 3;
     }
 
+    // A socket that was replaced by a newer connection attempt still fires its own callbacks;
+    // those must not be mistaken for the live connection.
+    public static boolean isCurrentSocket(WebSocket socket) {
+        return socket == ws;
+    }
+
     public static void sendPing(int id, boolean sync, byte[] data) {
         if (!AvatarManager.localUploaded || !isConnected())
             return;

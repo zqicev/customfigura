@@ -53,9 +53,12 @@ public final class FiguraAuthNetworking {
                 AuthHandler.pluginToken = token;
                 FiguraMod.LOGGER.info("Received Figura session token from server plugin (len=" + token.length() + ")");
                 if (changed) {
-                    NetworkStuff.reAuth();           // new token -> (re)connect with it
-                } else if (!NetworkStuff.isConnected()) {
-                    NetworkStuff.auth();             // same token, not connected -> connect
+                    // New token -> (re)connect with it. Flag "connecting" right away: the plugin
+                    // repeats the token, and a repeat must not start a second connection.
+                    NetworkStuff.backendStatus = 2;
+                    NetworkStuff.reAuth();
+                } else if (NetworkStuff.backendStatus == 1) {
+                    NetworkStuff.auth();             // same token, idle -> connect
                 }
             });
         });
