@@ -15,6 +15,8 @@ public class FiguraModFabric extends FiguraMod implements ClientModInitializer {
         ConfigManager.init();
         onClientInit();
         FiguraCommandsFabric.init();
+        // Receive the backend session token from the server plugin (figura:auth) and auth with it.
+        FiguraAuthNetworking.init();
         // we cast here to the impl that implements synchronous as the manager wants
         // register reload listener
         ResourceManagerHelper managerHelper = ResourceManagerHelper.get(PackType.CLIENT_RESOURCES);
