@@ -90,9 +90,8 @@ public class EntityUtils {
     }
 
     public static boolean checkInvalidPlayer(UUID id) {
-        if (id.version() != 4)
-            return true;
-
+        // Offline / cracked players have version-3 UUIDs; do not treat them as invalid (that would
+        // stop their avatars from loading/rendering). Only reject genuinely broken profiles below.
         PlayerInfo playerInfo = getPlayerInfo(id);
         if (playerInfo == null)
             return false;
